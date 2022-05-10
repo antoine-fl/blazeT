@@ -30,10 +30,10 @@ module Text.BlazeT.Internal
     ,wrapMarkup
     ,wrapMarkup2
     ,
-    
+
     -- * Entities exported also by "Text.Blaze.Internal"
     -- $descr1
-    
+
       -- ** Important types.
       Text.Blaze.ChoiceString (..)
     , Text.Blaze.StaticString (..)
@@ -147,9 +147,9 @@ runMarkupT = runWriterT . fromMarkupT
 -- computation and the blaze markup rendered with a blaze renderer
 -- like 'Text.BlazeT.Renderer.Text.renderHtml'
 runWith :: Monad m => (MarkupI () -> c) -> MarkupT m a -> m (a, c)
-runWith renderer =  liftM (second $ renderer . wrapMarkup) . runMarkupT  
+runWith renderer = liftM (\(a, m) -> (a, renderer $ wrapMarkup m)) . runMarkupT
 {-# INLINE runWith #-}
-  
+
 execMarkupT :: Monad m => MarkupT m a -> m Text.Blaze.Markup
 execMarkupT = liftM snd . runMarkupT
 {-# INLINE execMarkupT #-}
@@ -173,7 +173,7 @@ wrapMarkupT = tell
 {-# INLINE wrapMarkupT #-}
 
 wrapMarkup :: Text.Blaze.Markup -> Markup
-wrapMarkup = wrapMarkupT
+wrapMarkup m = wrapMarkupT m
 {-# INLINE wrapMarkup #-}
 
 
@@ -185,9 +185,15 @@ wrapMarkupT2 = censor
 {-# INLINE wrapMarkupT2 #-}
 
 wrapMarkup2 :: (Text.Blaze.Markup -> Text.Blaze.Markup) -> Markup2
-wrapMarkup2 = wrapMarkupT2
+wrapMarkup2 f = wrapMarkupT2 f
 {-# INLINE wrapMarkup2 #-}
 
+instance (Monad m, Semigroup a) => Semigroup (MarkupT m a) where
+  a <> b = do
+    a' <- a
+    b' <- b
+    pure $ a' <> b'
+  {-# INLINE (<>) #-}
 
 instance (Monad m,Monoid a) => Monoid (MarkupT m a) where
   mempty = return mempty
@@ -205,11 +211,11 @@ instance Monad m => Text.Blaze.Attributable (a -> MarkupT m b) where
   {-# INLINE (!) #-}
 
 instance Monad m => IsString (MarkupT m ()) where
-  fromString = wrapMarkup . fromString
+  fromString s = wrapMarkup $ fromString s
   {-# INLINE fromString #-}
 
 unsafeByteString :: BS.ByteString -> Markup
-unsafeByteString = wrapMarkup . Text.Blaze.unsafeByteString
+unsafeByteString bs = wrapMarkup $ Text.Blaze.unsafeByteString bs
 {-# INLINE unsafeByteString #-}
 
 -- | Insert a lazy 'BL.ByteString'. See 'unsafeByteString' for reasons why this
@@ -217,7 +223,7 @@ unsafeByteString = wrapMarkup . Text.Blaze.unsafeByteString
 --
 unsafeLazyByteString :: BL.ByteString  -- ^ Value to insert
                      -> Markup         -- ^ Resulting HTML fragment
-unsafeLazyByteString = wrapMarkup . Text.Blaze.unsafeLazyByteString
+unsafeLazyByteString bs = wrapMarkup $ Text.Blaze.unsafeLazyByteString bs
 {-# INLINE unsafeLazyByteString #-}
 
 external :: Monad m => MarkupT m a -> MarkupT m a
@@ -229,27 +235,27 @@ contents = wrapMarkupT2  Text.Blaze.contents
 {-# INLINE contents #-}
 
 customParent ::Text.Blaze.Tag -> Markup2
-customParent = wrapMarkup2 . Text.Blaze.customParent
+customParent t = wrapMarkup2 $ Text.Blaze.customParent t
 {-# INLINE customParent #-}
 
 customLeaf :: Text.Blaze.Tag -> Bool -> Markup
-customLeaf = fmap wrapMarkup . Text.Blaze.customLeaf
+customLeaf t close = wrapMarkup $ Text.Blaze.customLeaf t close
 {-# INLINE customLeaf #-}
 
 preEscapedText :: T.Text -> Markup
-preEscapedText = wrapMarkup . Text.Blaze.preEscapedText
+preEscapedText t = wrapMarkup $ Text.Blaze.preEscapedText t
 {-# INLINE preEscapedText #-}
 
 preEscapedLazyText :: LT.Text -> Markup
-preEscapedLazyText = wrapMarkup . Text.Blaze.preEscapedLazyText
+preEscapedLazyText lt = wrapMarkup $ Text.Blaze.preEscapedLazyText lt
 {-# INLINE preEscapedLazyText #-}
 
 preEscapedTextBuilder :: LTB.Builder -> Markup
 textBuilder :: LTB.Builder -> Markup
 
 #ifdef PRE_BUILDER
-preEscapedTextBuilder = wrapMarkup . Text.Blaze.preEscapedTextBuilder
-textBuilder = wrapMarkup . Text.Blaze.textBuilder
+preEscapedTextBuilder b = wrapMarkup $ Text.Blaze.preEscapedTextBuilder b
+textBuilder b = wrapMarkup $ Text.Blaze.textBuilder b
 {-# INLINE preEscapedTextBuilder #-}
 {-# INLINE textBuilder #-}
 #else
@@ -258,41 +264,41 @@ textBuilder = error "This function needs blaze-markup 0.7.1.0"
 #endif
 
 preEscapedString :: String -> Markup
-preEscapedString = wrapMarkup . Text.Blaze.preEscapedString
+preEscapedString s = wrapMarkup $ Text.Blaze.preEscapedString s
 {-# INLINE preEscapedString #-}
 
 string :: String -> Markup
-string = wrapMarkup . Text.Blaze.string
+string s = wrapMarkup $ Text.Blaze.string s
 {-# INLINE string #-}
 
 text :: T.Text -> Markup
-text = wrapMarkup . Text.Blaze.text
+text t = wrapMarkup $ Text.Blaze.text t
 {-# INLINE text #-}
 
 lazyText :: LT.Text -> Markup
-lazyText = wrapMarkup . Text.Blaze.lazyText
+lazyText lt = wrapMarkup $ Text.Blaze.lazyText lt
 {-# INLINE lazyText #-}
 
 
 textComment :: T.Text -> Markup
-textComment = wrapMarkup . Text.Blaze.textComment
+textComment t = wrapMarkup $ Text.Blaze.textComment t
 
 lazyTextComment :: LT.Text -> Markup
-lazyTextComment = wrapMarkup . Text.Blaze.lazyTextComment
+lazyTextComment lt = wrapMarkup $ Text.Blaze.lazyTextComment lt
 
 stringComment :: String -> Markup
-stringComment = wrapMarkup . Text.Blaze.stringComment
+stringComment s = wrapMarkup $ Text.Blaze.stringComment s
 
 unsafeByteStringComment :: BS.ByteString -> Markup
-unsafeByteStringComment = wrapMarkup . Text.Blaze.unsafeByteStringComment
+unsafeByteStringComment bs = wrapMarkup $ Text.Blaze.unsafeByteStringComment bs
 
 unsafeLazyByteStringComment :: BL.ByteString -> Markup
-unsafeLazyByteStringComment = wrapMarkup . Text.Blaze.unsafeLazyByteStringComment
+unsafeLazyByteStringComment bs = wrapMarkup $ Text.Blaze.unsafeLazyByteStringComment bs
 
 -- $descr1
 -- The following is an adaptation of all "Text.Blaze.Internal" exports to
 -- @blazeT@ types.
--- 
+--
 -- Entities that are reexported from "Text.Blaze.Internal" have the original
 -- documentation attached to them.
 --

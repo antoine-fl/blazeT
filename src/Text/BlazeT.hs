@@ -4,9 +4,9 @@
 
 module Text.BlazeT
   (
-   -- * DO NOT READ THIS. READ "Text.BlazeT.Internal" INSTEAD 
+   -- * DO NOT READ THIS. READ "Text.BlazeT.Internal" INSTEAD
     -- $descr
-    
+
    -- * DO NOT READ THIS
 -- -- * Important types.
       Markup
@@ -72,7 +72,7 @@ module Text.BlazeT
     ) where
 
 import qualified Text.Blaze
-import           Text.BlazeT.Internal as Text.BlazeT.Internal 
+import           Text.BlazeT.Internal as Text.BlazeT.Internal
 
 class ToMarkup a where
   toMarkup :: a -> Markup
@@ -82,14 +82,14 @@ class ToMarkup a where
 -- test = toMarkup
 
 instance Text.Blaze.ToMarkup a => ToMarkup a where
-  toMarkup = wrapMarkup . Text.Blaze.toMarkup
+  toMarkup a = wrapMarkup $ Text.Blaze.toMarkup a
   {-# INLINE toMarkup #-}
-  preEscapedToMarkup = wrapMarkup . Text.Blaze.preEscapedToMarkup
+  preEscapedToMarkup a = wrapMarkup $ Text.Blaze.preEscapedToMarkup a
   {-# INLINE preEscapedToMarkup #-}
 
 
 -- $descr
--- 
+--
 -- Due due a Haddock bug, this documentation is misleading. Please
 -- read "Text.BlazeT.Internal" instead.
 --
